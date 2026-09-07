@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="사용자의 문제를 이해하고 명확한 웹 경험으로 만드는 프론트엔드 개발자 반짝반짝빛나는의 포트폴리오입니다."
+    />
+    <title>반짝반짝빛나는 | Frontend Developer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Noto+Sans+KR:wght@400;500;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/main.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">본문으로 바로가기</a>
+
+    <header class="site-header" id="top">
+      <div class="container header-inner">
+        <a class="brand" href="#home" aria-label="반짝반짝빛나는 프로필 홈">
+          <span class="brand-mark" aria-hidden="true">빛</span>
+          <span>반짝반짝빛나는</span>
+        </a>
+
+        <nav class="site-nav" id="site-nav" aria-label="주요 메뉴">
+          <a href="about.html">소개</a>
+          <a href="skills.html">기술</a>
+          <a href="projects.html">프로젝트</a>
+        </nav>
+
+        <div class="header-actions">
+          <button class="icon-button theme-toggle" type="button" aria-label="다크 모드로 변경">
+            <svg class="sun-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path>
+            </svg>
+            <svg class="moon-icon" aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+            </svg>
+          </button>
+          <button
+            class="icon-button menu-toggle"
+            type="button"
+            aria-label="메뉴 열기"
+            aria-controls="site-nav"
+            aria-expanded="false"
+          >
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="hero section" id="home" aria-labelledby="hero-title">
+        <div class="container hero-grid">
+          <div class="hero-copy reveal">
+            <p class="eyebrow"><span></span> 함께 성장할 기회를 찾고 있어요</p>
+            <h1 id="hero-title">
+              안녕하세요.<br />
+              더 나은 경험을 만드는<br />
+              <em>개발자 반짝반짝빛나는</em>입니다.
+            </h1>
+            <p class="hero-description">
+              사용자의 문제를 이해하고, 단순하고 명확한 웹 경험으로 해결합니다.
+              견고한 코드와 세심한 인터랙션을 좋아합니다.
+            </p>
+            <div class="button-group">
+              <a class="button button-primary" href="#projects">프로젝트 보기 <span aria-hidden="true">↗</span></a>
+              <a class="button button-secondary" href="#contact">연락하기</a>
+            </div>
+          </div>
+
+          <div class="profile-visual reveal">
+            <div class="profile-orbit orbit-one"></div>
+            <div class="profile-orbit orbit-two"></div>
+            <div class="profile-card">
+              <img src="assets/images/profile.jpg" alt="밝게 웃고 있는 흰색 강아지 프로필 사진" />
+              <span class="profile-label">FRONTEND<br />DEVELOPER</span>
+            </div>
+            <span class="floating-badge badge-code" aria-hidden="true">&lt;/&gt;</span>
+            <span class="floating-badge badge-star" aria-hidden="true">✦</span>
+            <span class="diamond-sparkle sparkle-one" aria-hidden="true"></span>
+            <span class="diamond-sparkle sparkle-two" aria-hidden="true"></span>
+            <span class="diamond-sparkle sparkle-three" aria-hidden="true"></span>
+            <span class="diamond-sparkle sparkle-four" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="container hero-meta" aria-label="기본 정보">
+          <p><span>위치</span>Seoul, Korea</p>
+          <p><span>경력</span>3+ Years</p>
+          <p><span>관심 분야</span>Web · UI/UX · Accessibility</p>
+        </div>
+      </section>
+
+      <section class="section about-section" id="about" aria-labelledby="about-title">
+        <div class="container split-layout">
+          <div class="section-heading reveal">
+            <p class="section-number">01 / ABOUT</p>
+            <h2 id="about-title">문제를 발견하고,<br />경험으로 답합니다.</h2>
+          </div>
+          <div class="about-content reveal">
+            <p class="lead">
+              저는 화면을 만드는 일을 넘어, 사람들이 서비스를 더 쉽고 즐겁게
+              사용할 수 있는 방법을 고민합니다.
+            </p>
+            <p>
+              아이디어를 빠르게 시각화하고, 동료와 적극적으로 소통하며 완성도를
+              높이는 과정을 좋아합니다. 새로운 기술을 목적에 맞게 선택하고,
+              유지보수하기 좋은 코드를 작성하기 위해 꾸준히 학습합니다.
+            </p>
+            <div class="values-grid">
+              <article><span>01</span><h3>사용자 중심</h3><p>사용자의 맥락에서 문제를 바라봅니다.</p></article>
+              <article><span>02</span><h3>명확한 소통</h3><p>근거를 공유하고 함께 답을 찾습니다.</p></article>
+              <article><span>03</span><h3>꾸준한 개선</h3><p>작은 피드백도 제품의 성장으로 연결합니다.</p></article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section skills-section" id="skills" aria-labelledby="skills-title">
+        <div class="container">
+          <div class="section-heading horizontal reveal">
+            <div><p class="section-number">02 / SKILLS</p><h2 id="skills-title">제가 잘하는 일</h2></div>
+            <p>아이디어를 실제 서비스로 연결하는 데 필요한 기술을 다룹니다.</p>
+          </div>
+          <div class="skills-grid">
+            <article class="skill-card reveal">
+              <span class="skill-icon" aria-hidden="true">◇</span>
+              <p class="skill-index">01</p><h3>Frontend</h3>
+              <p>시맨틱 마크업과 반응형 UI를 구현합니다.</p>
+              <ul><li>HTML5</li><li>CSS3</li><li>JavaScript</li><li>React</li></ul>
+            </article>
+            <article class="skill-card reveal">
+              <span class="skill-icon" aria-hidden="true">⌘</span>
+              <p class="skill-index">02</p><h3>UI Engineering</h3>
+              <p>일관되고 재사용 가능한 인터페이스를 설계합니다.</p>
+              <ul><li>Responsive</li><li>Design System</li><li>Animation</li><li>Figma</li></ul>
+            </article>
+            <article class="skill-card reveal">
+              <span class="skill-icon" aria-hidden="true">◎</span>
+              <p class="skill-index">03</p><h3>Quality</h3>
+              <p>모두가 편하게 쓸 수 있는 안정적인 웹을 만듭니다.</p>
+              <ul><li>Accessibility</li><li>Performance</li><li>Git</li><li>Testing</li></ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section projects-section" id="projects" aria-labelledby="projects-title">
+        <div class="container">
+          <div class="section-heading horizontal reveal">
+            <div><p class="section-number">03 / SELECTED WORK</p><h2 id="projects-title">주요 프로젝트</h2></div>
+            <p>고민의 과정과 결과를 담은 프로젝트입니다.</p>
+          </div>
+          <div class="project-list">
+            <article class="project-card reveal">
+              <div class="project-art art-commerce" aria-hidden="true">
+                <div class="mock-window"><span></span><span></span><span></span><div class="mock-product"></div></div>
+              </div>
+              <div class="project-info">
+                <p class="project-number">PROJECT 01 · 2026</p><h3>마일드 마켓</h3>
+                <p>상품 탐색부터 결제까지 흐름을 단순화한 반응형 커머스 웹 서비스입니다.</p>
+                <ul class="tags"><li>HTML</li><li>CSS</li><li>JavaScript</li></ul>
+                <div class="project-links"><a href="#" aria-label="마일드 마켓 데모 보기">Live Demo ↗</a><a href="#" aria-label="마일드 마켓 소스 코드 보기">GitHub ↗</a></div>
+              </div>
+            </article>
+            <article class="project-card reverse reveal">
+              <div class="project-art art-dashboard" aria-hidden="true">
+                <div class="dashboard-window"><div class="dash-side"></div><div class="dash-main"><span></span><div class="dash-chart"></div><div class="dash-row"></div></div></div>
+              </div>
+              <div class="project-info">
+                <p class="project-number">PROJECT 02 · 2025</p><h3>데일리 대시</h3>
+                <p>하루의 일정과 목표 달성 현황을 한눈에 보여주는 생산성 대시보드입니다.</p>
+                <ul class="tags"><li>JavaScript</li><li>REST API</li><li>Chart</li></ul>
+                <div class="project-links"><a href="#" aria-label="데일리 대시 데모 보기">Live Demo ↗</a><a href="#" aria-label="데일리 대시 소스 코드 보기">GitHub ↗</a></div>
+              </div>
+            </article>
+          </div>
+          <p class="project-note">※ 프로젝트 링크와 설명은 실제 정보로 교체해 주세요.</p>
+        </div>
+      </section>
+
+      <section class="section contact-section" id="contact" aria-labelledby="contact-title">
+        <div class="container contact-grid">
+          <div class="contact-copy reveal">
+            <p class="section-number">04 / CONTACT</p>
+            <h2 id="contact-title">함께 멋진 것을<br />만들어 볼까요?</h2>
+            <p>새로운 프로젝트, 협업 또는 가벼운 커피챗까지 언제든 환영합니다.</p>
+            <a class="email-link" href="mailto:hello@example.com">hello@example.com <span aria-hidden="true">↗</span></a>
+            <div class="social-links"><a href="#">GitHub</a><a href="#">LinkedIn</a><a href="#">Blog</a></div>
+          </div>
+          <form class="contact-form reveal" id="contact-form" novalidate>
+            <div class="field-row">
+              <div class="form-field"><label for="name">이름</label><input id="name" name="name" type="text" placeholder="홍길동" autocomplete="name" required /><small class="error-message"></small></div>
+              <div class="form-field"><label for="email">이메일</label><input id="email" name="email" type="email" placeholder="hello@example.com" autocomplete="email" required /><small class="error-message"></small></div>
+            </div>
+            <div class="form-field"><label for="message">메시지</label><textarea id="message" name="message" rows="5" placeholder="함께 이야기하고 싶은 내용을 적어주세요." required></textarea><small class="error-message"></small></div>
+            <button class="button button-primary submit-button" type="submit">메시지 보내기 <span aria-hidden="true">↗</span></button>
+            <p class="form-status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>© <span id="current-year">2026</span> 반짝반짝빛나는. All rights reserved.</p>
+        <a href="#top">맨 위로 <span aria-hidden="true">↑</span></a>
+      </div>
+    </footer>
+  </body>
+</html>
