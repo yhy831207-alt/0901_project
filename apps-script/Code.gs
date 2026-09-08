@@ -1,10 +1,7 @@
 /**
  * 민준의 기록 - Google Sheets 기반 회원 API (MVP)
  *
- * 최초 1회 실행 순서:
- * 1. setupAuthSheets()
- * 2. setAuthPepper()
- * 3. 웹 앱으로 배포
+ * 웹 앱의 첫 요청에서 Users/Sessions 시트와 인증 비밀값을 자동 초기화합니다.
  */
 
 const CONFIG = Object.freeze({
@@ -26,6 +23,7 @@ const SESSION_HEADERS = [
 ];
 
 function doGet(e) {
+  ensureAuthReady_();
   const action = String((e && e.parameter && e.parameter.action) || 'health');
 
   if (action === 'health') {
@@ -37,6 +35,7 @@ function doGet(e) {
 
 function doPost(e) {
   try {
+    ensureAuthReady_();
     const data = requestData_(e);
     const action = String(data.action || '').trim().toLowerCase();
 
@@ -280,7 +279,7 @@ function base64Url_(bytes) {
 
 function sheet_(name) {
   const sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(name);
-  if (!sheet) fail_('SHEET_NOT_FOUND', name + ' 시트를 찾을 수 없습니다. setupAuthSheets()를 먼저 실행해 주세요.');
+  if (!sheet) fail_('SHEET_NOT_FOUND', name + ' 시트를 찾을 수 없습니다.');
   return sheet;
 }
 
@@ -306,24 +305,38 @@ function json_(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
 }
 
-/** Apps Script 편집기에서 최초 1회 직접 실행합니다. */
+/** 선택 사항: 편집기에서 수동 초기화가 필요할 때 실행합니다. */
 function setupAuthSheets() {
-  const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  createSheet_(spreadsheet, CONFIG.USERS_SHEET, USER_HEADERS);
-  createSheet_(spreadsheet, CONFIG.SESSIONS_SHEET, SESSION_HEADERS);
+  ensureAuthReady_();
+}
+
+function ensureAuthReady_() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    createSheet_(spreadsheet, CONFIG.USERS_SHEET, USER_HEADERS);
+    createSheet_(spreadsheet, CONFIG.SESSIONS_SHEET, SESSION_HEADERS);
+
+    if (!properties.getProperty('AUTH_PEPPER')) {
+      properties.setProperty('AUTH_PEPPER', randomToken_() + randomToken_());
+    }
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function createSheet_(spreadsheet, name, headers) {
-  const sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
-  if (sheet.getLastRow() === 0) sheet.appendRow(headers);
+  const existing = spreadsheet.getSheetByName(name);
+  if (existing && existing.getLastRow() > 0) return existing;
+  const sheet = existing || spreadsheet.insertSheet(name);
+  sheet.appendRow(headers);
   sheet.setFrozenRows(1);
   sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#244c3c').setFontColor('#ffffff');
   sheet.autoResizeColumns(1, headers.length);
-}
-
-/** Apps Script 편집기에서 최초 1회 직접 실행합니다. 실행 후 로그에 비밀값을 출력하지 않습니다. */
-function setAuthPepper() {
-  PropertiesService.getScriptProperties().setProperty('AUTH_PEPPER', randomToken_() + randomToken_());
+  return sheet;
 }
 
 /** 선택 사항: 만료 또는 폐기된 지 7일이 지난 세션을 정리합니다. */
