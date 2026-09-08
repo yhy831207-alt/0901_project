@@ -1,5 +1,5 @@
 const root=document.documentElement,nav=document.querySelector('.site-nav'),menu=document.querySelector('.menu-toggle'),theme=document.querySelector('.theme-toggle');
-const AUTH_API_URL='https://script.google.com/macros/s/AKfycbyP_LPbIectFs0YkkNTOCxh38wJJmLT9n-ZgN0ythM7oAxNDLGBSBKgCT4CaH5zafBdsQ/exec';
+const AUTH_API_URL='https://script.google.com/macros/s/AKfycbzEusnnkKwrUN7Sp0M7w3wa_YVDxROXkl0w_m1JZWhRwQGicH6d26zKj3eBAU9HpCGlOA/exec';
 const saved=localStorage.getItem('blog-theme');if(saved==='dark'||(!saved&&matchMedia('(prefers-color-scheme:dark)').matches))root.dataset.theme='dark';
 function themeLabel(){theme?.setAttribute('aria-label',root.dataset.theme==='dark'?'라이트 모드로 변경':'다크 모드로 변경')}themeLabel();
 theme?.addEventListener('click',()=>{root.dataset.theme=root.dataset.theme==='dark'?'':'dark';localStorage.setItem('blog-theme',root.dataset.theme||'light');themeLabel()});
