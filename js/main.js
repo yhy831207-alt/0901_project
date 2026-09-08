@@ -1,97 +1,20 @@
-const root = document.documentElement;
-const header = document.querySelector('.site-header');
-const nav = document.querySelector('.site-nav');
-const menuToggle = document.querySelector('.menu-toggle');
-const themeToggle = document.querySelector('.theme-toggle');
-const navLinks = [...document.querySelectorAll('.site-nav a')];
-const sections = [...document.querySelectorAll('main section[id]')];
+const root=document.documentElement,nav=document.querySelector('.site-nav'),menu=document.querySelector('.menu-toggle'),theme=document.querySelector('.theme-toggle');
+const saved=localStorage.getItem('blog-theme');if(saved==='dark'||(!saved&&matchMedia('(prefers-color-scheme:dark)').matches))root.dataset.theme='dark';
+function themeLabel(){theme?.setAttribute('aria-label',root.dataset.theme==='dark'?'라이트 모드로 변경':'다크 모드로 변경')}themeLabel();
+theme?.addEventListener('click',()=>{root.dataset.theme=root.dataset.theme==='dark'?'':'dark';localStorage.setItem('blog-theme',root.dataset.theme||'light');themeLabel()});
+menu?.addEventListener('click',()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',open);document.body.classList.toggle('nav-open',open)});
+document.querySelectorAll('.site-nav a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');document.body.classList.remove('nav-open')}));
+addEventListener('scroll',()=>document.querySelector('.site-header')?.classList.toggle('scrolled',scrollY>8),{passive:true});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target)}}),{threshold:.08});document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+document.querySelectorAll('[data-year]').forEach(el=>el.textContent=new Date().getFullYear());
 
-const savedTheme = localStorage.getItem('profile-theme');
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-if (savedTheme === 'dark' || (!savedTheme && prefersDark)) root.dataset.theme = 'dark';
+function validateForm(form){let valid=true;form.querySelectorAll('[required]').forEach(field=>{const wrap=field.closest('.form-field'),error=wrap?.querySelector('.error-message');let msg='';if(field.type==='checkbox'&&!field.checked)msg='동의가 필요합니다.';else if(!field.value.trim())msg='필수 입력 항목입니다.';else if(field.type==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value))msg='올바른 이메일 주소를 입력해 주세요.';else if(field.minLength>0&&field.value.length<field.minLength)msg=`${field.minLength}자 이상 입력해 주세요.`;wrap?.classList.toggle('invalid',!!msg);if(error)error.textContent=msg;field.setAttribute('aria-invalid',String(!!msg));if(msg)valid=false});return valid}
+document.querySelectorAll('[data-demo-form]').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();const status=form.querySelector('.form-status');if(!validateForm(form)){if(status)status.textContent='입력 내용을 다시 확인해 주세요.';form.querySelector('.invalid input,.invalid textarea')?.focus();return}if(status)status.textContent=form.dataset.success||'완료되었습니다.';form.reset()}));
 
-function updateThemeLabel() {
-  const isDark = root.dataset.theme === 'dark';
-  themeToggle.setAttribute('aria-label', isDark ? '라이트 모드로 변경' : '다크 모드로 변경');
-}
+const filters=document.querySelectorAll('.filter-button'),cards=document.querySelectorAll('[data-category]'),search=document.querySelector('#post-search');
+function filterPosts(category='전체',query=''){cards.forEach(card=>{const categoryMatch=category==='전체'||card.dataset.category===category;const textMatch=card.textContent.toLowerCase().includes(query.toLowerCase());card.classList.toggle('hidden',!categoryMatch||!textMatch)})}
+filters.forEach(btn=>btn.addEventListener('click',()=>{filters.forEach(b=>b.classList.remove('active'));btn.classList.add('active');filterPosts(btn.dataset.filter,search?.value||'')}));
+search?.addEventListener('input',()=>filterPosts(document.querySelector('.filter-button.active')?.dataset.filter||'전체',search.value));
 
-updateThemeLabel();
-
-themeToggle.addEventListener('click', () => {
-  const isDark = root.dataset.theme === 'dark';
-  if (isDark) delete root.dataset.theme;
-  else root.dataset.theme = 'dark';
-  localStorage.setItem('profile-theme', isDark ? 'light' : 'dark');
-  updateThemeLabel();
-});
-
-function closeMenu() {
-  nav.classList.remove('open');
-  menuToggle.setAttribute('aria-expanded', 'false');
-  menuToggle.setAttribute('aria-label', '메뉴 열기');
-  document.body.classList.remove('nav-open');
-}
-
-menuToggle.addEventListener('click', () => {
-  const willOpen = !nav.classList.contains('open');
-  nav.classList.toggle('open', willOpen);
-  menuToggle.setAttribute('aria-expanded', String(willOpen));
-  menuToggle.setAttribute('aria-label', willOpen ? '메뉴 닫기' : '메뉴 열기');
-  document.body.classList.toggle('nav-open', willOpen);
-});
-
-navLinks.forEach((link) => link.addEventListener('click', closeMenu));
-window.addEventListener('resize', () => { if (window.innerWidth > 900) closeMenu(); });
-
-const activeSectionObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (!entry.isIntersecting) return;
-    navLinks.forEach((link) => link.classList.toggle('active', link.hash === `#${entry.target.id}`));
-  });
-}, { rootMargin: '-35% 0px -55%', threshold: 0 });
-
-if (navLinks.some((link) => link.hash)) {
-  sections.forEach((section) => activeSectionObserver.observe(section));
-}
-
-const revealObserver = new IntersectionObserver((entries, observer) => {
-  entries.forEach((entry) => {
-    if (!entry.isIntersecting) return;
-    entry.target.classList.add('visible');
-    observer.unobserve(entry.target);
-  });
-}, { threshold: 0.12 });
-
-document.querySelectorAll('.reveal').forEach((element) => revealObserver.observe(element));
-window.addEventListener('scroll', () => header.classList.toggle('scrolled', window.scrollY > 12), { passive: true });
-
-const form = document.querySelector('#contact-form');
-const formStatus = form?.querySelector('.form-status');
-const fields = form ? [...form.querySelectorAll('input, textarea')] : [];
-
-function validateField(field) {
-  const wrapper = field.closest('.form-field');
-  const error = wrapper.querySelector('.error-message');
-  let message = '';
-  if (!field.value.trim()) message = '필수 입력 항목입니다.';
-  else if (field.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value)) message = '올바른 이메일 주소를 입력해 주세요.';
-  wrapper.classList.toggle('invalid', Boolean(message));
-  error.textContent = message;
-  field.setAttribute('aria-invalid', String(Boolean(message)));
-  return !message;
-}
-
-fields.forEach((field) => field.addEventListener('blur', () => validateField(field)));
-
-form?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const isValid = fields.map(validateField).every(Boolean);
-  if (!isValid) {
-    formStatus.textContent = '입력 내용을 다시 확인해 주세요.';
-    form.querySelector('.invalid input, .invalid textarea')?.focus();
-    return;
-  }
-  formStatus.textContent = '폼 전송을 사용하려면 백엔드 또는 폼 서비스를 연결해 주세요.';
-});
-
-document.querySelector('#current-year').textContent = new Date().getFullYear();
+const editor=document.querySelector('#editor-body');document.querySelectorAll('[data-insert]').forEach(btn=>btn.addEventListener('click',()=>{if(!editor)return;const [start,end]=[editor.selectionStart,editor.selectionEnd],mark=btn.dataset.insert,selected=editor.value.slice(start,end)||'텍스트';editor.setRangeText(`${mark}${selected}${mark}`,start,end,'select');editor.focus()}));
+document.querySelector('#draft-button')?.addEventListener('click',()=>{const status=document.querySelector('.form-status');localStorage.setItem('blog-draft',JSON.stringify({title:document.querySelector('#post-title')?.value,body:editor?.value}));if(status)status.textContent='임시저장했습니다.'});
