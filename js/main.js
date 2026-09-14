@@ -1,7 +1,7 @@
 const authStyles=document.createElement('link');authStyles.rel='stylesheet';authStyles.href='css/auth-nav.css';document.head.appendChild(authStyles);
 const postStyles=document.createElement('link');postStyles.rel='stylesheet';postStyles.href='css/posts-crud.css';document.head.appendChild(postStyles);
 const root=document.documentElement,nav=document.querySelector('.site-nav'),menu=document.querySelector('.menu-toggle'),theme=document.querySelector('.theme-toggle');
-const AUTH_API_URL='https://script.google.com/macros/s/AKfycbzEusnnkKwrUN7Sp0M7w3wa_YVDxROXkl0w_m1JZWhRwQGicH6d26zKj3eBAU9HpCGlOA/exec';
+const AUTH_API_URL='https://script.google.com/macros/s/AKfycbz5Lce8ag5EeN5fuiPaloxlUFOX8EB3kDpX5H7InQV8LGxeg54kGqnFMPyhZvA7u_PsuQ/exec';
 const saved=localStorage.getItem('blog-theme');if(saved==='dark'||(!saved&&matchMedia('(prefers-color-scheme:dark)').matches))root.dataset.theme='dark';
 function themeLabel(){theme?.setAttribute('aria-label',root.dataset.theme==='dark'?'라이트 모드로 변경':'다크 모드로 변경')}themeLabel();
 theme?.addEventListener('click',()=>{root.dataset.theme=root.dataset.theme==='dark'?'':'dark';localStorage.setItem('blog-theme',root.dataset.theme||'light');themeLabel()});
