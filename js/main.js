@@ -1,5 +1,5 @@
 const root=document.documentElement,nav=document.querySelector('.site-nav'),menu=document.querySelector('.menu-toggle'),theme=document.querySelector('.theme-toggle');
-const AUTH_API_URL='https://script.google.com/macros/s/AKfycbz5Lce8ag5EeN5fuiPaloxlUFOX8EB3kDpX5H7InQV8LGxeg54kGqnFMPyhZvA7u_PsuQ/exec';
+const AUTH_API_URL='https://script.google.com/macros/s/AKfycbw6HUk018GecllKQH-zcxX7nS6vEFflpnS4bzy4QXEtso_HplPFpoR_4Nep7c2FAoav/exec';
 const AUTH_VERIFY_TTL=5*60*1000;
 const saved=localStorage.getItem('blog-theme');if(saved==='dark'||(!saved&&matchMedia('(prefers-color-scheme:dark)').matches))root.dataset.theme='dark';
 function themeLabel(){theme?.setAttribute('aria-label',root.dataset.theme==='dark'?'라이트 모드로 변경':'다크 모드로 변경')}themeLabel();
