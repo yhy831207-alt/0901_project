@@ -28,6 +28,9 @@ const POST_HEADERS = [
   'summary', 'commentsAllowed', 'status', 'createdAt', 'updatedAt',
 ];
 
+let spreadsheetCache_;
+const PUBLIC_POSTS_CACHE_KEY = 'public-posts-v1';
+
 function doGet(e) {
   ensureAuthReady_();
   const action = String((e && e.parameter && e.parameter.action) || 'health');
@@ -196,6 +199,7 @@ function createPost_(data) {
     safeCell_(post.body), safeCell_(post.category), safeCell_(post.tags),
     safeCell_(post.summary), post.commentsAllowed, 'published', now, now,
   ]);
+  CacheService.getScriptCache().remove(PUBLIC_POSTS_CACHE_KEY);
   return json_({ success: true, post: postResponse_({
     id: id, userId: user.id, authorName: user.nickname || user.name,
     title: post.title, body: post.body, category: post.category, tags: post.tags,
@@ -205,11 +209,15 @@ function createPost_(data) {
 }
 
 function listPosts_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get(PUBLIC_POSTS_CACHE_KEY);
+  if (cached) return json_({ success: true, posts: JSON.parse(cached) });
   const posts = rowsAsObjects_(sheet_(CONFIG.POSTS_SHEET))
     .filter(function (post) { return post.status === 'published'; })
     .sort(function (left, right) { return new Date(right.createdAt) - new Date(left.createdAt); })
     .slice(0, 100)
-    .map(postResponse_);
+    .map(function (post) { return postResponse_(post, false); });
+  try { cache.put(PUBLIC_POSTS_CACHE_KEY, JSON.stringify(posts), 120); } catch (error) {}
   return json_({ success: true, posts: posts });
 }
 
@@ -227,7 +235,7 @@ function listMyPosts_(data) {
   const posts = rowsAsObjects_(sheet_(CONFIG.POSTS_SHEET))
     .filter(function (post) { return String(post.userId) === String(user.id) && post.status !== 'deleted'; })
     .sort(function (left, right) { return new Date(right.updatedAt) - new Date(left.updatedAt); })
-    .map(postResponse_);
+    .map(function (post) { return postResponse_(post, true); });
   return json_({ success: true, posts: posts });
 }
 
@@ -243,9 +251,12 @@ function updatePost_(data) {
     updatedAt: new Date(),
   };
   Object.keys(values).forEach(function (key) {
-    sheet.getRange(post._row, POST_HEADERS.indexOf(key) + 1).setValue(values[key]);
     post[key] = values[key];
   });
+  sheet.getRange(post._row, 1, 1, POST_HEADERS.length).setValues([
+    POST_HEADERS.map(function (header) { return post[header]; }),
+  ]);
+  CacheService.getScriptCache().remove(PUBLIC_POSTS_CACHE_KEY);
   return json_({ success: true, post: postResponse_(post) });
 }
 
@@ -253,8 +264,12 @@ function deletePost_(data) {
   const user = authenticatedUser_(data.token);
   const sheet = sheet_(CONFIG.POSTS_SHEET);
   const post = ownedPost_(sheet, data.id, user.id);
-  sheet.getRange(post._row, POST_HEADERS.indexOf('status') + 1).setValue('deleted');
-  sheet.getRange(post._row, POST_HEADERS.indexOf('updatedAt') + 1).setValue(new Date());
+  post.status = 'deleted';
+  post.updatedAt = new Date();
+  sheet.getRange(post._row, 1, 1, POST_HEADERS.length).setValues([
+    POST_HEADERS.map(function (header) { return post[header]; }),
+  ]);
+  CacheService.getScriptCache().remove(PUBLIC_POSTS_CACHE_KEY);
   return json_({ success: true, message: '글을 삭제했습니다.' });
 }
 
@@ -302,10 +317,11 @@ function cleanPostText_(value, maxLength) {
   return String(value || '').replace(/[\u0000\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, maxLength);
 }
 
-function postResponse_(post) {
+function postResponse_(post, includeBody) {
+  const body = String(post.body || '');
   return {
     id: String(post.id), authorName: String(post.authorName || ''),
-    title: String(post.title || ''), body: String(post.body || ''),
+    title: String(post.title || ''), body: includeBody === false ? body.slice(0, 220) : body,
     category: String(post.category || ''), tags: String(post.tags || ''),
     summary: String(post.summary || ''),
     commentsAllowed: post.commentsAllowed === true || String(post.commentsAllowed) === 'true',
@@ -419,9 +435,14 @@ function base64Url_(bytes) {
 }
 
 function sheet_(name) {
-  const sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(name);
+  const sheet = spreadsheet_().getSheetByName(name);
   if (!sheet) fail_('SHEET_NOT_FOUND', name + ' 시트를 찾을 수 없습니다.');
   return sheet;
+}
+
+function spreadsheet_() {
+  if (!spreadsheetCache_) spreadsheetCache_ = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  return spreadsheetCache_;
 }
 
 function rowsAsObjects_(sheet) {
@@ -452,12 +473,15 @@ function setupAuthSheets() {
 }
 
 function ensureAuthReady_() {
+  const cache = CacheService.getScriptCache();
+  if (cache.get('storage-ready-v2')) return;
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
 
   try {
+    if (cache.get('storage-ready-v2')) return;
     const properties = PropertiesService.getScriptProperties();
-    const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    const spreadsheet = spreadsheet_();
     createSheet_(spreadsheet, CONFIG.USERS_SHEET, USER_HEADERS);
     createSheet_(spreadsheet, CONFIG.SESSIONS_SHEET, SESSION_HEADERS);
     createSheet_(spreadsheet, CONFIG.POSTS_SHEET, POST_HEADERS);
@@ -465,6 +489,7 @@ function ensureAuthReady_() {
     if (!properties.getProperty('AUTH_PEPPER')) {
       properties.setProperty('AUTH_PEPPER', randomToken_() + randomToken_());
     }
+    cache.put('storage-ready-v2', '1', 21600);
   } finally {
     lock.releaseLock();
   }

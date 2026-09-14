@@ -15,6 +15,23 @@
   text-align: center;
 }
 
+.hero-layout-single {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+}
+
+.hero-layout-single .hero-copy {
+  text-align: center;
+}
+
+.hero-layout-single .hero-copy > p {
+  margin-inline: auto;
+}
+
+.hero-layout-single .hero-actions {
+  justify-content: center;
+}
+
 .my-posts-heading,
 .manage-post-item,
 .manage-post-actions {
@@ -73,6 +90,14 @@
 .manage-delete {
   border-color: #c83f32;
   color: #c83f32;
+}
+
+.draft-save-status {
+  display: block;
+  min-height: 20px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: center;
 }
 
 @media (max-width: 620px) {
