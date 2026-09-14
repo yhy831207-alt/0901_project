@@ -1,4 +1,5 @@
 const authStyles=document.createElement('link');authStyles.rel='stylesheet';authStyles.href='css/auth-nav.css';document.head.appendChild(authStyles);
+const postStyles=document.createElement('link');postStyles.rel='stylesheet';postStyles.href='css/posts-crud.css';document.head.appendChild(postStyles);
 const root=document.documentElement,nav=document.querySelector('.site-nav'),menu=document.querySelector('.menu-toggle'),theme=document.querySelector('.theme-toggle');
 const AUTH_API_URL='https://script.google.com/macros/s/AKfycbzEusnnkKwrUN7Sp0M7w3wa_YVDxROXkl0w_m1JZWhRwQGicH6d26zKj3eBAU9HpCGlOA/exec';
 const saved=localStorage.getItem('blog-theme');if(saved==='dark'||(!saved&&matchMedia('(prefers-color-scheme:dark)').matches))root.dataset.theme='dark';
@@ -11,7 +12,7 @@ const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.targ
 document.querySelectorAll('[data-year]').forEach(el=>el.textContent=new Date().getFullYear());
 
 function validateForm(form){let valid=true;form.querySelectorAll('[required]').forEach(field=>{const wrap=field.closest('.form-field'),error=wrap?.querySelector('.error-message');let msg='';if(field.type==='checkbox'&&!field.checked)msg='동의가 필요합니다.';else if(!field.value.trim())msg='필수 입력 항목입니다.';else if(field.type==='email'&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value))msg='올바른 이메일 주소를 입력해 주세요.';else if(field.minLength>0&&field.value.length<field.minLength)msg=`${field.minLength}자 이상 입력해 주세요.`;wrap?.classList.toggle('invalid',!!msg);if(error)error.textContent=msg;field.setAttribute('aria-invalid',String(!!msg));if(msg)valid=false});return valid}
-document.querySelectorAll('[data-demo-form]:not(.auth-card)').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();const status=form.querySelector('.form-status');if(!validateForm(form)){if(status)status.textContent='입력 내용을 다시 확인해 주세요.';form.querySelector('.invalid input,.invalid textarea')?.focus();return}if(status)status.textContent=form.dataset.success||'완료되었습니다.';form.reset()}));
+document.querySelectorAll('[data-demo-form]:not(.auth-card):not(.write-layout)').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();const status=form.querySelector('.form-status');if(!validateForm(form)){if(status)status.textContent='입력 내용을 다시 확인해 주세요.';form.querySelector('.invalid input,.invalid textarea')?.focus();return}if(status)status.textContent=form.dataset.success||'완료되었습니다.';form.reset()}));
 
 async function authRequest(action,payload={}){const body=new URLSearchParams({action,...payload});const response=await fetch(AUTH_API_URL,{method:'POST',body,redirect:'follow'});if(!response.ok)throw new Error('인증 서버에 연결할 수 없습니다.');return response.json()}
 function authToken(){return sessionStorage.getItem('blog-auth-token')||localStorage.getItem('blog-auth-token')||''}
@@ -40,6 +41,9 @@ function renderAuthHeader(user){
       logout.addEventListener('click',async()=>{logout.disabled=true;logout.textContent='처리 중';try{await authRequest('logout',{token:authToken()})}catch(error){}finally{clearAuthToken();renderAuthHeader(null);location.href='index.html'}});
       container.append(logout,createAuthLink('프로필','profile.html','header-cta'));
     }else container.append(createAuthLink('로그인','login.html','header-login'),createAuthLink('회원가입','signup.html','header-cta'));
+    const writeLink=createAuthLink('글쓰기','write.html','header-write');
+    if(location.pathname.endsWith('write.html')){writeLink.classList.add('active');writeLink.setAttribute('aria-current','page')}
+    container.append(writeLink);
   })
   if(user&&location.pathname.endsWith('profile.html')){
     const panelName=document.querySelector('.profile-panel h2'),panelInfo=document.querySelector('.profile-panel p'),profileTitle=document.querySelector('.profile-content h1');
@@ -56,10 +60,12 @@ async function syncAuthHeader(){
 }
 syncAuthHeader();
 
-const filters=document.querySelectorAll('.filter-button'),cards=document.querySelectorAll('[data-category]'),search=document.querySelector('#post-search');
-function filterPosts(category='전체',query=''){cards.forEach(card=>{const categoryMatch=category==='전체'||card.dataset.category===category;const textMatch=card.textContent.toLowerCase().includes(query.toLowerCase());card.classList.toggle('hidden',!categoryMatch||!textMatch)})}
+const filters=document.querySelectorAll('.filter-button'),search=document.querySelector('#post-search');
+function filterPosts(category='전체',query=''){document.querySelectorAll('[data-category]').forEach(card=>{const categoryMatch=category==='전체'||card.dataset.category===category;const textMatch=card.textContent.toLowerCase().includes(query.toLowerCase());card.classList.toggle('hidden',!categoryMatch||!textMatch)})}
 filters.forEach(btn=>btn.addEventListener('click',()=>{filters.forEach(b=>b.classList.remove('active'));btn.classList.add('active');filterPosts(btn.dataset.filter,search?.value||'')}));
 search?.addEventListener('input',()=>filterPosts(document.querySelector('.filter-button.active')?.dataset.filter||'전체',search.value));
 
 const editor=document.querySelector('#editor-body');document.querySelectorAll('[data-insert]').forEach(btn=>btn.addEventListener('click',()=>{if(!editor)return;const [start,end]=[editor.selectionStart,editor.selectionEnd],mark=btn.dataset.insert,selected=editor.value.slice(start,end)||'텍스트';editor.setRangeText(`${mark}${selected}${mark}`,start,end,'select');editor.focus()}));
 document.querySelector('#draft-button')?.addEventListener('click',()=>{const status=document.querySelector('.form-status');localStorage.setItem('blog-draft',JSON.stringify({title:document.querySelector('#post-title')?.value,body:editor?.value}));if(status)status.textContent='임시저장했습니다.'});
+
+const postsScript=document.createElement('script');postsScript.src='js/posts.js';document.body.appendChild(postsScript);

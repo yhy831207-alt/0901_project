@@ -8,6 +8,7 @@ const CONFIG = Object.freeze({
   SPREADSHEET_ID: '1lHyPD4zLCcZ81rgj_h1tSdtcL_zFgioC_ChUH-s10xQ',
   USERS_SHEET: 'Users',
   SESSIONS_SHEET: 'Sessions',
+  POSTS_SHEET: 'Posts',
   SESSION_TTL_MS: 24 * 60 * 60 * 1000,
   LOGIN_LIMIT: 5,
   LOGIN_WINDOW_SECONDS: 10 * 60,
@@ -20,6 +21,11 @@ const USER_HEADERS = [
 
 const SESSION_HEADERS = [
   'tokenHash', 'userId', 'expiresAt', 'createdAt', 'revokedAt',
+];
+
+const POST_HEADERS = [
+  'id', 'userId', 'authorName', 'title', 'body', 'category', 'tags',
+  'summary', 'commentsAllowed', 'status', 'createdAt', 'updatedAt',
 ];
 
 function doGet(e) {
@@ -43,6 +49,12 @@ function doPost(e) {
     if (action === 'login') return login_(data);
     if (action === 'session') return session_(data);
     if (action === 'logout') return logout_(data);
+    if (action === 'createpost') return createPost_(data);
+    if (action === 'listposts') return listPosts_();
+    if (action === 'getpost') return getPost_(data);
+    if (action === 'listmyposts') return listMyPosts_(data);
+    if (action === 'updatepost') return updatePost_(data);
+    if (action === 'deletepost') return deletePost_(data);
 
     return json_({ success: false, code: 'INVALID_ACTION', message: '지원하지 않는 요청입니다.' });
   } catch (error) {
@@ -172,6 +184,135 @@ function logout_(data) {
 
   if (current) sheet.getRange(current._row, SESSION_HEADERS.indexOf('revokedAt') + 1).setValue(new Date());
   return json_({ success: true, message: '로그아웃되었습니다.' });
+}
+
+function createPost_(data) {
+  const user = authenticatedUser_(data.token);
+  const post = postInput_(data);
+  const now = new Date();
+  const id = Utilities.getUuid();
+  sheet_(CONFIG.POSTS_SHEET).appendRow([
+    id, user.id, safeCell_(user.nickname || user.name), safeCell_(post.title),
+    safeCell_(post.body), safeCell_(post.category), safeCell_(post.tags),
+    safeCell_(post.summary), post.commentsAllowed, 'published', now, now,
+  ]);
+  return json_({ success: true, post: postResponse_({
+    id: id, userId: user.id, authorName: user.nickname || user.name,
+    title: post.title, body: post.body, category: post.category, tags: post.tags,
+    summary: post.summary, commentsAllowed: post.commentsAllowed,
+    status: 'published', createdAt: now, updatedAt: now,
+  }) });
+}
+
+function listPosts_() {
+  const posts = rowsAsObjects_(sheet_(CONFIG.POSTS_SHEET))
+    .filter(function (post) { return post.status === 'published'; })
+    .sort(function (left, right) { return new Date(right.createdAt) - new Date(left.createdAt); })
+    .slice(0, 100)
+    .map(postResponse_);
+  return json_({ success: true, posts: posts });
+}
+
+function getPost_(data) {
+  const id = String(data.id || '').trim();
+  const post = rowsAsObjects_(sheet_(CONFIG.POSTS_SHEET)).find(function (item) {
+    return String(item.id) === id && item.status === 'published';
+  });
+  if (!post) fail_('POST_NOT_FOUND', '글을 찾을 수 없습니다.');
+  return json_({ success: true, post: postResponse_(post) });
+}
+
+function listMyPosts_(data) {
+  const user = authenticatedUser_(data.token);
+  const posts = rowsAsObjects_(sheet_(CONFIG.POSTS_SHEET))
+    .filter(function (post) { return String(post.userId) === String(user.id) && post.status !== 'deleted'; })
+    .sort(function (left, right) { return new Date(right.updatedAt) - new Date(left.updatedAt); })
+    .map(postResponse_);
+  return json_({ success: true, posts: posts });
+}
+
+function updatePost_(data) {
+  const user = authenticatedUser_(data.token);
+  const sheet = sheet_(CONFIG.POSTS_SHEET);
+  const post = ownedPost_(sheet, data.id, user.id);
+  const input = postInput_(data);
+  const values = {
+    title: safeCell_(input.title), body: safeCell_(input.body),
+    category: safeCell_(input.category), tags: safeCell_(input.tags),
+    summary: safeCell_(input.summary), commentsAllowed: input.commentsAllowed,
+    updatedAt: new Date(),
+  };
+  Object.keys(values).forEach(function (key) {
+    sheet.getRange(post._row, POST_HEADERS.indexOf(key) + 1).setValue(values[key]);
+    post[key] = values[key];
+  });
+  return json_({ success: true, post: postResponse_(post) });
+}
+
+function deletePost_(data) {
+  const user = authenticatedUser_(data.token);
+  const sheet = sheet_(CONFIG.POSTS_SHEET);
+  const post = ownedPost_(sheet, data.id, user.id);
+  sheet.getRange(post._row, POST_HEADERS.indexOf('status') + 1).setValue('deleted');
+  sheet.getRange(post._row, POST_HEADERS.indexOf('updatedAt') + 1).setValue(new Date());
+  return json_({ success: true, message: '글을 삭제했습니다.' });
+}
+
+function authenticatedUser_(token) {
+  token = String(token || '');
+  if (!token) fail_('UNAUTHORIZED', '로그인이 필요합니다.');
+  const tokenHash = hashToken_(token);
+  const session = rowsAsObjects_(sheet_(CONFIG.SESSIONS_SHEET)).find(function (item) {
+    return constantTimeEqual_(String(item.tokenHash), tokenHash) && !item.revokedAt;
+  });
+  if (!session || new Date(session.expiresAt).getTime() <= Date.now()) {
+    fail_('SESSION_EXPIRED', '로그인 세션이 만료되었습니다.');
+  }
+  const user = rowsAsObjects_(sheet_(CONFIG.USERS_SHEET)).find(function (item) {
+    return String(item.id) === String(session.userId);
+  });
+  if (!user || user.status !== 'active') fail_('UNAUTHORIZED', '사용자 정보를 확인할 수 없습니다.');
+  return publicUser_(user);
+}
+
+function ownedPost_(sheet, postId, userId) {
+  const post = rowsAsObjects_(sheet).find(function (item) {
+    return String(item.id) === String(postId || '') && item.status !== 'deleted';
+  });
+  if (!post) fail_('POST_NOT_FOUND', '글을 찾을 수 없습니다.');
+  if (String(post.userId) !== String(userId)) fail_('FORBIDDEN', '이 글을 수정하거나 삭제할 권한이 없습니다.');
+  return post;
+}
+
+function postInput_(data) {
+  const title = cleanPostText_(data.title, 120);
+  const body = cleanPostText_(data.body, 50000);
+  const category = cleanPostText_(data.category, 30) || '생각';
+  const tags = cleanPostText_(data.tags, 200);
+  const summary = cleanPostText_(data.summary, 300);
+  if (title.length < 2) fail_('INVALID_TITLE', '제목은 2자 이상 입력해 주세요.');
+  if (!body) fail_('INVALID_BODY', '본문을 입력해 주세요.');
+  return {
+    title: title, body: body, category: category, tags: tags, summary: summary,
+    commentsAllowed: String(data.commentsAllowed) !== 'false',
+  };
+}
+
+function cleanPostText_(value, maxLength) {
+  return String(value || '').replace(/[\u0000\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, maxLength);
+}
+
+function postResponse_(post) {
+  return {
+    id: String(post.id), authorName: String(post.authorName || ''),
+    title: String(post.title || ''), body: String(post.body || ''),
+    category: String(post.category || ''), tags: String(post.tags || ''),
+    summary: String(post.summary || ''),
+    commentsAllowed: post.commentsAllowed === true || String(post.commentsAllowed) === 'true',
+    status: String(post.status || ''),
+    createdAt: new Date(post.createdAt).toISOString(),
+    updatedAt: new Date(post.updatedAt).toISOString(),
+  };
 }
 
 function createSession_(userId) {
@@ -319,6 +460,7 @@ function ensureAuthReady_() {
     const spreadsheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
     createSheet_(spreadsheet, CONFIG.USERS_SHEET, USER_HEADERS);
     createSheet_(spreadsheet, CONFIG.SESSIONS_SHEET, SESSION_HEADERS);
+    createSheet_(spreadsheet, CONFIG.POSTS_SHEET, POST_HEADERS);
 
     if (!properties.getProperty('AUTH_PEPPER')) {
       properties.setProperty('AUTH_PEPPER', randomToken_() + randomToken_());

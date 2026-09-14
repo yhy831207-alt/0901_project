@@ -1,6 +1,6 @@
 # Google Apps Script 회원 API 설정
 
-이 디렉터리의 `Code.gs`는 현재 블로그의 회원가입·로그인 MVP용 코드입니다.
+이 디렉터리의 `Code.gs`는 블로그의 회원가입·로그인과 게시글 CRUD를 처리합니다.
 
 ## 설치
 
@@ -9,7 +9,9 @@
 3. `배포 → 새 배포 → 웹 앱`을 선택합니다.
 4. 실행 사용자는 `나`, 액세스 권한은 블로그 공개 범위에 맞게 설정합니다.
 5. 생성된 `/exec` URL을 블로그의 API URL로 사용합니다.
-6. 웹 앱에 첫 요청이 오면 `Users`, `Sessions` 탭과 인증 비밀값이 자동 생성됩니다.
+6. 웹 앱에 첫 요청이 오면 `Users`, `Sessions`, `Posts` 탭과 인증 비밀값이 자동 생성됩니다.
+
+기존 웹 앱을 수정했다면 `배포 → 배포 관리 → 수정 → 새 버전`으로 다시 배포해야 변경된 게시글 API가 `/exec` 주소에 반영됩니다.
 
 수동 초기화가 필요할 때만 편집기에서 `setupAuthSheets`를 실행하세요.
 
@@ -35,7 +37,7 @@ const response = await fetch(WEB_APP_URL, {
 const result = await response.json();
 ```
 
-지원하는 `action`은 `signup`, `login`, `session`, `logout`입니다. 로그인 성공 시 반환되는 토큰은 브라우저의 `sessionStorage`에 저장하는 것을 권장하며 URL 쿼리 문자열에는 넣지 마세요.
+지원하는 인증 `action`은 `signup`, `login`, `session`, `logout`입니다. 게시글 `action`은 `createPost`, `listPosts`, `getPost`, `listMyPosts`, `updatePost`, `deletePost`입니다. 생성·내 글 목록·수정·삭제에는 로그인 토큰이 필요하며, 수정과 삭제는 작성자 본인에게만 허용됩니다. 로그인 성공 시 반환되는 토큰은 브라우저의 `sessionStorage`에 저장하는 것을 권장하며 URL 쿼리 문자열에는 넣지 마세요.
 
 ## 보안 범위
 
