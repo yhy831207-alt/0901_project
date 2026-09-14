@@ -1,3 +1,4 @@
+const authStyles=document.createElement('link');authStyles.rel='stylesheet';authStyles.href='css/auth-nav.css';document.head.appendChild(authStyles);
 const root=document.documentElement,nav=document.querySelector('.site-nav'),menu=document.querySelector('.menu-toggle'),theme=document.querySelector('.theme-toggle');
 const AUTH_API_URL='https://script.google.com/macros/s/AKfycbzEusnnkKwrUN7Sp0M7w3wa_YVDxROXkl0w_m1JZWhRwQGicH6d26zKj3eBAU9HpCGlOA/exec';
 const saved=localStorage.getItem('blog-theme');if(saved==='dark'||(!saved&&matchMedia('(prefers-color-scheme:dark)').matches))root.dataset.theme='dark';
@@ -19,7 +20,40 @@ function clearAuthToken(){sessionStorage.removeItem('blog-auth-token');localStor
 
 document.querySelectorAll('.auth-card[data-demo-form]').forEach(form=>form.addEventListener('submit',async e=>{e.preventDefault();const status=form.querySelector('.form-status'),button=form.querySelector('[type="submit"]'),isSignup=location.pathname.endsWith('signup.html');if(!validateForm(form)){status.textContent='입력 내용을 다시 확인해 주세요.';form.querySelector('.invalid input,.invalid textarea')?.focus();return}const payload=isSignup?{email:form.querySelector('#email').value,password:form.querySelector('#password').value,name:form.querySelector('#name').value,nickname:form.querySelector('#nickname').value}:{email:form.querySelector('#email').value,password:form.querySelector('#password').value};status.textContent='처리 중입니다...';button.disabled=true;try{const result=await authRequest(isSignup?'signup':'login',payload);if(!result.success)throw new Error(result.message||'요청을 처리하지 못했습니다.');if(isSignup){status.textContent='회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.';setTimeout(()=>location.href='login.html',900)}else{const remember=form.querySelector('input[type="checkbox"]')?.checked;saveAuthToken(result.token,remember);localStorage.setItem('blog-auth-user',JSON.stringify(result.user));status.textContent=`${result.user.nickname}님, 환영합니다. 잠시 후 이동합니다.`;setTimeout(()=>location.href='profile.html',800)}}catch(error){status.textContent=error.message||'인증 서버 오류가 발생했습니다.'}finally{button.disabled=false}}));
 
-async function syncAuthHeader(){const token=authToken(),loginLink=document.querySelector('.header-login');if(!token||!loginLink)return;try{const result=await authRequest('session',{token});if(!result.success)throw new Error();loginLink.textContent='로그아웃';loginLink.href='#';loginLink.title=`${result.user.nickname}님으로 로그인 중`;loginLink.addEventListener('click',async e=>{e.preventDefault();loginLink.textContent='처리 중';try{await authRequest('logout',{token})}finally{clearAuthToken();location.href='index.html'}})}catch(error){clearAuthToken()}}
+function cachedAuthUser(){try{return JSON.parse(localStorage.getItem('blog-auth-user')||'null')}catch(error){return null}}
+function createAuthLink(label,href,className){const link=document.createElement('a');link.textContent=label;link.href=href;link.className=className;return link}
+function authContainers(){
+  const headerActions=document.querySelector('.header-actions');
+  if(!headerActions)return[];
+  headerActions.querySelectorAll(':scope > .header-login,:scope > .header-cta').forEach(link=>link.remove());
+  let desktop=headerActions.querySelector('[data-auth-actions]');
+  if(!desktop){desktop=document.createElement('div');desktop.className='auth-actions';desktop.dataset.authActions='';headerActions.insertBefore(desktop,headerActions.querySelector('.theme-toggle'))}
+  let mobile=nav?.querySelector('[data-mobile-auth-actions]');
+  if(!mobile&&nav){mobile=document.createElement('div');mobile.className='mobile-auth-actions';mobile.dataset.mobileAuthActions='';nav.appendChild(mobile)}
+  return[desktop,mobile].filter(Boolean)
+}
+function renderAuthHeader(user){
+  authContainers().forEach(container=>{
+    container.replaceChildren();
+    if(user){
+      const logout=document.createElement('button');logout.type='button';logout.className='header-login auth-logout';logout.textContent='로그아웃';logout.title=`${user.nickname||user.name||'회원'}님으로 로그인 중`;
+      logout.addEventListener('click',async()=>{logout.disabled=true;logout.textContent='처리 중';try{await authRequest('logout',{token:authToken()})}catch(error){}finally{clearAuthToken();renderAuthHeader(null);location.href='index.html'}});
+      container.append(logout,createAuthLink('프로필','profile.html','header-cta'));
+    }else container.append(createAuthLink('로그인','login.html','header-login'),createAuthLink('회원가입','signup.html','header-cta'));
+  })
+  if(user&&location.pathname.endsWith('profile.html')){
+    const panelName=document.querySelector('.profile-panel h2'),panelInfo=document.querySelector('.profile-panel p'),profileTitle=document.querySelector('.profile-content h1');
+    if(panelName)panelName.textContent=user.nickname||user.name||'회원';
+    if(panelInfo)panelInfo.textContent=[user.name,user.email].filter(Boolean).join(' · ');
+    if(profileTitle)profileTitle.textContent=`${user.nickname||user.name||'회원'}님의 프로필`;
+  }
+}
+async function syncAuthHeader(){
+  const token=authToken(),cachedUser=cachedAuthUser();
+  renderAuthHeader(token?(cachedUser||{nickname:'회원'}):null);
+  if(!token)return;
+  try{const result=await authRequest('session',{token});if(!result.success){clearAuthToken();renderAuthHeader(null);return}localStorage.setItem('blog-auth-user',JSON.stringify(result.user));renderAuthHeader(result.user)}catch(error){/* 네트워크 오류 시 저장된 로그인 화면을 유지합니다. */}
+}
 syncAuthHeader();
 
 const filters=document.querySelectorAll('.filter-button'),cards=document.querySelectorAll('[data-category]'),search=document.querySelector('#post-search');
